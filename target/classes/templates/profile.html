@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль - AIUEducation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/courses" class="text-xl font-bold text-purple-600">AIUEducation</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/courses" class="text-gray-700 hover:text-purple-600">Курсы</a>
+                    <a href="/profile" class="text-purple-600 font-medium">Профиль</a>
+                    <form th:action="@{/logout}" method="post" class="inline">
+                        <button type="submit" class="text-gray-700 hover:text-purple-600">Выйти</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Profile Header -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex items-center space-x-6">
+                <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user text-3xl text-purple-600"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900" th:text="${user.username}">Имя пользователя</h1>
+                    <p class="text-gray-600" th:text="${user.email}">email@example.com</p>
+                    <span class="inline-block px-3 py-1 text-sm font-medium rounded-full"
+                          th:classappend="${user.role.name() == 'TEACHER'} ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'"
+                          th:text="${user.role.name() == 'TEACHER'} ? 'Преподаватель' : 'Студент'">
+                        Роль
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100">
+                        <i class="fas fa-heart text-red-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Лайкнутые курсы</p>
+                        <p class="text-2xl font-bold text-gray-900" th:text="${stats.likedCoursesCount}">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100">
+                        <i class="fas fa-star text-yellow-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Избранные курсы</p>
+                        <p class="text-2xl font-bold text-gray-900" th:text="${stats.favoriteCoursesCount}">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${user.role.name() == 'TEACHER'}" class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100">
+                        <i class="fas fa-book text-blue-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Созданные курсы</p>
+                        <p class="text-2xl font-bold text-gray-900" th:text="${stats.createdCoursesCount}">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${user.role.name() == 'TEACHER'}" class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100">
+                        <i class="fas fa-thumbs-up text-green-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Получено лайков</p>
+                        <p class="text-2xl font-bold text-gray-900" th:text="${stats.totalLikesReceived}">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activities -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Liked Courses -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">
+                        <i class="fas fa-heart text-red-600 mr-2"></i>Лайкнутые курсы
+                    </h2>
+                    <a href="/profile/liked" class="text-purple-600 hover:text-purple-800 text-sm">Все</a>
+                </div>
+                <div th:if="${#lists.isEmpty(recentLikedCourses)}" class="text-gray-500 text-center py-4">
+                    Нет лайкнутых курсов
+                </div>
+                <div th:each="course : ${recentLikedCourses}" class="mb-3 last:mb-0">
+                    <a th:href="@{/courses/{id}(id=${course.id})}" 
+                       class="block p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                        <h3 class="font-medium text-gray-900 truncate" th:text="${course.title}">Название курса</h3>
+                        <p class="text-sm text-gray-600 truncate" th:text="${course.category}">Категория</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Favorite Courses -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">
+                        <i class="fas fa-star text-yellow-600 mr-2"></i>Избранные курсы
+                    </h2>
+                    <a href="/profile/favorites" class="text-purple-600 hover:text-purple-800 text-sm">Все</a>
+                </div>
+                <div th:if="${#lists.isEmpty(recentFavoriteCourses)}" class="text-gray-500 text-center py-4">
+                    Нет избранных курсов
+                </div>
+                <div th:each="course : ${recentFavoriteCourses}" class="mb-3 last:mb-0">
+                    <a th:href="@{/courses/{id}(id=${course.id})}" 
+                       class="block p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                        <h3 class="font-medium text-gray-900 truncate" th:text="${course.title}">Название курса</h3>
+                        <p class="text-sm text-gray-600 truncate" th:text="${course.category}">Категория</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- My Courses (for teachers) -->
+            <div th:if="${user.role.name() == 'TEACHER'}" class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">
+                        <i class="fas fa-book text-blue-600 mr-2"></i>Мои курсы
+                    </h2>
+                    <a href="/profile/my-courses" class="text-purple-600 hover:text-purple-800 text-sm">Все</a>
+                </div>
+                <div th:if="${#lists.isEmpty(recentUserCourses)}" class="text-gray-500 text-center py-4">
+                    Нет созданных курсов
+                </div>
+                <div th:each="course : ${recentUserCourses}" class="mb-3 last:mb-0">
+                    <a th:href="@{/courses/{id}(id=${course.id})}" 
+                       class="block p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                        <h3 class="font-medium text-gray-900 truncate" th:text="${course.title}">Название курса</h3>
+                        <p class="text-sm text-gray-600 truncate" th:text="${course.category}">Категория</p>
+                        <div class="flex items-center mt-1 text-xs text-gray-500">
+                            <i class="fas fa-heart mr-1"></i>
+                            <span th:text="${course.likes}">0</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="mt-8 bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Быстрые действия</h2>
+            <div class="flex flex-wrap gap-4">
+                <a href="/courses" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors">
+                    <i class="fas fa-search mr-2"></i>Найти курсы
+                </a>
+                <a th:if="${user.role.name() == 'TEACHER'}" href="/courses/new" 
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Создать курс
+                </a>
+                <a href="/profile/liked" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors">
+                    <i class="fas fa-heart mr-2"></i>Мои лайки
+                </a>
+                <a href="/profile/favorites" class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg transition-colors">
+                    <i class="fas fa-star mr-2"></i>Избранное
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

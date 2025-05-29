@@ -1,0 +1,24 @@
+# Development Dockerfile with faster build times
+FROM eclipse-temurin:17-jdk-alpine
+
+# Install Maven
+RUN apk add --no-cache maven
+
+# Set working directory
+WORKDIR /app
+
+# Copy pom.xml and download dependencies
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copy source code
+COPY src ./src
+
+# Create uploads directory
+RUN mkdir -p /var/uploads
+
+# Expose port
+EXPOSE 8080
+
+# For development - compile and run without creating jar
+CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.profiles=dev"] 

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Онлайн-курсы</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-graduation-cap text-3xl"></i>
+                    <h1 class="text-3xl font-bold">AIUEducation</h1>
+                </div>
+                <nav class="flex items-center space-x-4">
+                    <div th:if="${username}" class="flex items-center space-x-4">
+                        <span class="flex items-center space-x-2">
+                            <i class="fas fa-user"></i>
+                            <span th:text="${username}"></span>
+                        </span>
+                        <span class="flex items-center space-x-2">
+                            <i class="fas fa-tag"></i>
+                            <span th:text="${userRole}"></span>
+                        </span>
+                        <a th:href="@{/profile}" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-user-circle mr-2"></i>Профиль
+                        </a>
+                        <form th:action="@{/logout}" method="post" style="display:inline">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Выйти
+                            </button>
+                        </form>
+                    </div>
+                    <div th:unless="${username}" class="flex items-center space-x-4">
+                        <a th:href="@{/login}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Войти
+                        </a>
+                        <a th:href="@{/register}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-user-plus mr-2"></i>Регистрация
+                        </a>
+                    </div>
+                    <div th:if="${userRole == T(com.example.demo.model.UserRole).TEACHER}">
+                        <a th:href="@{/courses/new}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Создать курс
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Search and Filters -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-search mr-3 text-blue-500"></i>
+                Поиск курсов
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <form th:action="@{/courses}" method="get" class="flex">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" name="keyword" th:value="${keyword}" 
+                               placeholder="Поиск курсов..." 
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-r-lg transition-colors">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+                <form th:action="@{/courses}" method="get" class="flex">
+                    <div class="relative flex-1">
+                        <i class="fas fa-filter absolute left-3 top-3 text-gray-400"></i>
+                        <select name="category" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Все категории</option>
+                            <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}" th:selected="${cat == selectedCategory}"></option>
+                        </select>
+                    </div>
+                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-r-lg transition-colors">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Quick Category Filters -->
+            <div class="flex flex-wrap gap-3">
+                <span class="text-sm font-medium text-gray-700 mb-2">Быстрый выбор:</span>
+                <a href="/courses?category=Программирование" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-sm transition-colors flex items-center">
+                    <i class="fas fa-code mr-1"></i> Программирование
+                </a>
+                <a href="/courses?category=Дизайн" class="bg-purple-100 hover:bg-purple-200 text-purple-800 px-3 py-1 rounded-full text-sm transition-colors flex items-center">
+                    <i class="fas fa-palette mr-1"></i> Дизайн
+                </a>
+                <a href="/courses?category=Маркетинг" class="bg-green-100 hover:bg-green-200 text-green-800 px-3 py-1 rounded-full text-sm transition-colors flex items-center">
+                    <i class="fas fa-chart-line mr-1"></i> Маркетинг
+                </a>
+                <a href="/courses?category=Бизнес" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded-full text-sm transition-colors flex items-center">
+                    <i class="fas fa-briefcase mr-1"></i> Бизнес
+                </a>
+            </div>
+        </div>
+
+        <!-- Course Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div th:each="course : ${courses}" class="bg-white rounded-lg shadow-lg overflow-hidden card-hover">
+                <!-- Video Preview -->
+                <div class="relative h-48 bg-gray-200">
+                    <video th:if="${course.videoPath}" class="w-full h-full object-cover" controls>
+                        <source th:src="${course.videoPath}" type="video/mp4">
+                        Ваш браузер не поддерживает видео.
+                    </video>
+                    <div th:unless="${course.videoPath}" class="flex items-center justify-center h-full">
+                        <i class="fas fa-play-circle text-6xl text-gray-400"></i>
+                    </div>
+                    
+                    <!-- Category Badge -->
+                    <div class="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm flex items-center">
+                        <i th:class="${course.category == 'Программирование' ? 'fas fa-code' : 
+                                     course.category == 'Дизайн' ? 'fas fa-palette' : 
+                                     course.category == 'Маркетинг' ? 'fas fa-chart-line' : 
+                                     'fas fa-briefcase'}" class="mr-1"></i>
+                        <span th:text="${course.category}"></span>
+                    </div>
+                    
+                    <!-- Difficulty Level -->
+                    <div class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
+                        <i class="fas fa-signal mr-1"></i>Начальный
+                    </div>
+                </div>
+                
+                <!-- Course Info -->
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold mb-2 text-gray-800" th:text="${course.title}"></h3>
+                    <p class="text-gray-600 mb-4 line-clamp-3" th:text="${course.description}"></p>
+                    
+                    <!-- Course Meta Info -->
+                    <div class="flex items-center justify-between mb-4 text-sm">
+                        <div class="flex items-center space-x-3">
+                            <span class="flex items-center text-red-500">
+                                <i class="fas fa-heart mr-1"></i>
+                                <span th:text="${course.likes}"></span>
+                            </span>
+                            <span class="flex items-center text-yellow-500">
+                                <i class="fas fa-bookmark mr-1"></i>
+                                <span th:text="${#lists.size(course.favoritedBy)}"></span>
+                            </span>
+                            <span class="flex items-center text-blue-500">
+                                <i class="fas fa-eye mr-1"></i>
+                                <span th:text="${course.viewCount}"></span>
+                            </span>
+                            <span class="flex items-center text-purple-500">
+                                <i class="fas fa-play-circle mr-1"></i>
+                                <span th:text="${#lists.size(course.lessons)} + ' уроков'"></span>
+                            </span>
+                        </div>
+                        
+                        <!-- Rating -->
+                        <div class="flex items-center">
+                            <div class="flex text-yellow-400 mr-1">
+                                <i class="fas fa-star text-xs"></i>
+                                <i class="fas fa-star text-xs"></i>
+                                <i class="fas fa-star text-xs"></i>
+                                <i class="fas fa-star text-xs"></i>
+                                <i class="fas fa-star-half-alt text-xs"></i>
+                            </div>
+                            <span class="text-xs text-gray-500">4.5</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Author Info -->
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold mr-2">
+                            <span th:text="${#strings.substring(course.createdBy, 0, 1).toUpperCase()}"></span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-800" th:text="${course.createdBy}"></p>
+                            <p class="text-xs text-gray-500">Преподаватель</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Favorite Status -->
+                    <div th:if="${username != null and #lists.contains(course.favoritedBy, username)}" 
+                         class="flex items-center text-green-500 mb-4 bg-green-50 p-2 rounded">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span class="text-sm">В вашем избранном</span>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-2">
+                        <a th:href="@{/courses/{id}(id=${course.id})}" 
+                           class="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-center py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
+                            <i class="fas fa-play mr-2"></i>Начать изучение
+                        </a>
+                        <button class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- No courses message -->
+            <div th:if="${#lists.isEmpty(courses)}" class="col-span-3 text-center py-12">
+                <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl text-gray-500 mb-2">Курсы не найдены</h3>
+                <p class="text-gray-400">Попробуйте изменить параметры поиска</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

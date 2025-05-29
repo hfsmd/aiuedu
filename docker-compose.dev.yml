@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: aiueducation-app-dev
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DATABASE_URL=jdbc:postgresql://db:5432/aiueducation_db
+      - DATABASE_USERNAME=aiueducation_user
+      - DATABASE_PASSWORD=aiueducation_pass
+    ports:
+      - "8080:8080"  # Прямой доступ к приложению
+    volumes:
+      - ./src:/app/src  # Hot reload для исходного кода
+      - ./pom.xml:/app/pom.xml:ro
+      - uploads:/var/uploads
+      - maven_cache:/root/.m2  # Кэш Maven для быстрой сборки
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15-alpine
+    container_name: aiueducation-db-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=aiueducation_db
+      - POSTGRES_USER=aiueducation_user
+      - POSTGRES_PASSWORD=aiueducation_pass
+    ports:
+      - "5432:5432"  # Стандартный порт для удобства подключения
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aiueducation_user -d aiueducation_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Опциональный pgAdmin для управления базой данных
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: aiueducation-pgadmin
+    restart: unless-stopped
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db
+
+volumes:
+  postgres_data_dev:
+  pgadmin_data:
+  uploads:
+  maven_cache: 

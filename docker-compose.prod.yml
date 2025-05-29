@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: aiueducation-app
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DATABASE_URL=jdbc:postgresql://db:5432/aiueducation_prod
+      - DATABASE_USERNAME=aiueducation
+      - DATABASE_PASSWORD=${DB_PASSWORD:-your_secure_password}
+    volumes:
+      - uploads:/var/uploads
+      - ./logs:/app/logs
+    depends_on:
+      - db
+    networks:
+      - aiueducation-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    image: postgres:15-alpine
+    container_name: aiueducation-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=aiueducation_prod
+      - POSTGRES_USER=aiueducation
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-your_secure_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - aiueducation-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aiueducation -d aiueducation_prod"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    container_name: aiueducation-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - uploads:/var/uploads
+    depends_on:
+      - app
+    networks:
+      - aiueducation-network
+
+volumes:
+  postgres_data:
+  uploads:
+
+networks:
+  aiueducation-network:
+    driver: bridge 

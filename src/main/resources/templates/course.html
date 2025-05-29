@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${course.title}"></title>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-graduation-cap text-3xl"></i>
+                    <h1 class="text-3xl font-bold">AIUEducation</h1>
+                </div>
+                <a th:href="@{/courses}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Назад к курсам
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Course Header -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+                <div class="p-8">
+                    <h1 class="text-4xl font-bold text-gray-800 mb-4" th:text="${course.title}"></h1>
+                    <div class="flex items-center space-x-6 text-gray-600 mb-6">
+                        <span class="flex items-center">
+                            <i class="fas fa-tag mr-2 text-blue-500"></i>
+                            <span th:text="${course.category}"></span>
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-user mr-2 text-green-500"></i>
+                            <span th:text="${course.createdBy}"></span>
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-heart mr-2 text-red-500"></i>
+                            <span th:text="${course.likes}"></span>
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-bookmark mr-2 text-yellow-500"></i>
+                            <span th:text="${#lists.size(course.favoritedBy)}"></span>
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-eye mr-2 text-blue-500"></i>
+                            <span th:text="${viewCount}"></span>
+                        </span>
+                    </div>
+                    <p class="text-gray-700 text-lg leading-relaxed" th:text="${course.description}"></p>
+                </div>
+            </div>
+
+            <!-- Video Section -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+                <div class="p-6">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-play-circle mr-3 text-red-500"></i>
+                        Видео курса
+                    </h2>
+                    <div class="aspect-video bg-gray-900 rounded-lg overflow-hidden">
+                        <video th:if="${course.videoPath}" class="w-full h-full" controls>
+                            <source th:src="${course.videoPath}" type="video/mp4">
+                            Ваш браузер не поддерживает видео.
+                        </video>
+                        <iframe th:if="${course.videoUrl != null and course.videoUrl != '' and (course.videoPath == null or course.videoPath == '')}" 
+                                th:src="${course.videoUrl}" 
+                                class="w-full h-full" 
+                                frameborder="0" 
+                                allowfullscreen></iframe>
+                        <div th:if="${(course.videoPath == null or course.videoPath == '') and (course.videoUrl == null or course.videoUrl == '')}" 
+                             class="flex items-center justify-center h-full text-gray-400">
+                            <div class="text-center">
+                                <i class="fas fa-video text-6xl mb-4"></i>
+                                <p class="text-xl">Видео не загружено</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <div class="flex flex-wrap gap-4">
+                    <!-- Like Button -->
+                    <form th:action="@{/courses/{id}/like(id=${course.id})}" method="post" class="inline">
+                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-colors flex items-center">
+                            <i class="fas fa-heart mr-2"></i>Лайк
+                        </button>
+                    </form>
+                    
+                    <!-- Favorite Button -->
+                    <form th:action="@{/courses/{id}/favorite(id=${course.id})}" method="post" class="inline">
+                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg transition-colors flex items-center">
+                            <i class="fas fa-bookmark mr-2"></i>
+                            <span th:if="${course.favoritedBy.contains(username)}">Удалить из избранного</span>
+                            <span th:unless="${course.favoritedBy.contains(username)}">Добавить в избранное</span>
+                        </button>
+                    </form>
+                    
+                    <!-- Video Upload Form - Only for Course Creator -->
+                    <div th:if="${username != null and username == course.createdBy}">
+                        <form th:action="@{/courses/{id}/uploadVideo(id=${course.id})}" method="post" enctype="multipart/form-data" class="flex items-center space-x-2">
+                            <input type="file" name="videoFile" accept="video/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                            <button type="submit" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                <i class="fas fa-upload mr-2"></i>Загрузить видео
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Edit Course Button - Only for Course Creator -->
+                    <div th:if="${username != null and username == course.createdBy}">
+                        <a th:href="@{/courses/{id}/edit(id=${course.id})}" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors flex items-center">
+                            <i class="fas fa-edit mr-2"></i>Редактировать курс
+                        </a>
+                    </div>
+                    
+                    <!-- Rating System -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-gray-600">Оценить курс:</span>
+                        <div class="flex space-x-1" id="rating-stars">
+                            <i class="fas fa-star text-gray-300 cursor-pointer hover:text-yellow-400" data-rating="1"></i>
+                            <i class="fas fa-star text-gray-300 cursor-pointer hover:text-yellow-400" data-rating="2"></i>
+                            <i class="fas fa-star text-gray-300 cursor-pointer hover:text-yellow-400" data-rating="3"></i>
+                            <i class="fas fa-star text-gray-300 cursor-pointer hover:text-yellow-400" data-rating="4"></i>
+                            <i class="fas fa-star text-gray-300 cursor-pointer hover:text-yellow-400" data-rating="5"></i>
+                        </div>
+                        <span class="text-sm text-gray-500" th:text="'(' + ${#numbers.formatDecimal(averageRating, 1, 1)} + '/5 - ' + ${ratingCount} + ' оценок)'"></span>
+                    </div>
+                </div>
+                
+                <!-- Course Creator Info -->
+                <div th:if="${username != null and username == course.createdBy}" class="mt-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                    <div class="flex items-center text-blue-700">
+                        <i class="fas fa-crown mr-2"></i>
+                        <span class="font-semibold">Вы являетесь создателем этого курса</span>
+                    </div>
+                    <p class="text-sm text-blue-600 mt-1">У вас есть полные права на редактирование и управление курсом</p>
+                </div>
+                
+                <!-- Favorite Status -->
+                <div th:if="${course.favoritedBy.contains(username)}" class="mt-4 flex items-center text-green-600">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span>В вашем избранном</span>
+                </div>
+                
+                <!-- Progress Bar for Students -->
+                <div th:if="${username != null and username != course.createdBy}" class="mt-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700">Прогресс просмотра</span>
+                        <span class="text-sm text-gray-500">75%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full" style="width: 75%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lessons Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center">
+                    <i class="fas fa-list mr-3 text-green-500"></i>
+                    Уроки курса (<span th:text="${#lists.size(course.lessons)}"></span>)
+                </h2>
+                
+                <!-- Add Lesson Form - Only for Course Creator -->
+                <div th:if="${username != null and username == course.createdBy}" class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h3 class="text-lg font-semibold mb-4 text-blue-700">
+                        <i class="fas fa-plus mr-2"></i>Добавить новый урок
+                    </h3>
+                    <form th:action="@{/courses/{id}/lessons(id=${course.id})}" method="post" enctype="multipart/form-data">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Название урока</label>
+                                <input type="text" name="title" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Номер урока</label>
+                                <input type="number" name="orderNumber" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" min="1" required>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Описание урока</label>
+                            <textarea name="description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Видео файл</label>
+                            <input type="file" name="videoFile" accept="video/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Добавить урок
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Lessons List -->
+                <div class="space-y-4">
+                    <div th:each="lesson : ${course.lessons}" class="bg-gray-50 rounded-lg p-4 border-l-4 border-green-500 hover:bg-gray-100 transition-colors">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center mb-2">
+                                    <span class="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded mr-3" th:text="'Урок ' + ${lesson.orderNumber}"></span>
+                                    <h3 class="text-lg font-semibold text-gray-800" th:text="${lesson.title}"></h3>
+                                </div>
+                                <p class="text-gray-600 mb-3" th:text="${lesson.description}"></p>
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    <span th:text="${#temporals.format(lesson.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div th:if="${lesson.videoPath}" class="text-green-500">
+                                    <i class="fas fa-video text-xl"></i>
+                                </div>
+                                <div th:unless="${lesson.videoPath}" class="text-gray-400">
+                                    <i class="fas fa-video-slash text-xl"></i>
+                                </div>
+                                <!-- Edit/Delete buttons for course creator -->
+                                <div th:if="${username != null and username == course.createdBy}" class="flex space-x-1">
+                                    <button class="text-blue-500 hover:text-blue-700 p-1">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-red-500 hover:text-red-700 p-1">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Video Player for lesson -->
+                        <div th:if="${lesson.videoPath}" class="mt-4">
+                            <div class="aspect-video bg-gray-900 rounded-lg overflow-hidden">
+                                <video class="w-full h-full" controls>
+                                    <source th:src="${lesson.videoPath}" type="video/mp4">
+                                    Ваш браузер не поддерживает видео.
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div th:if="${#lists.isEmpty(course.lessons)}" class="text-center py-8 text-gray-500">
+                        <i class="fas fa-list-alt text-4xl mb-4"></i>
+                        <p>Пока нет уроков в этом курсе</p>
+                        <p th:if="${username != null and username == course.createdBy}" class="text-sm mt-2">Добавьте первый урок выше</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center">
+                    <i class="fas fa-comments mr-3 text-blue-500"></i>
+                    Комментарии (<span th:text="${#lists.size(course.comments)}"></span>)
+                </h2>
+                
+                <!-- Comment Form -->
+                <form th:action="@{/courses/{id}/comments(id=${course.id})}" method="post" th:object="${comment}" class="mb-8">
+                    <div class="flex space-x-4">
+                        <div class="flex-1">
+                            <textarea th:field="*{content}" 
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                      placeholder="Напишите ваш комментарий..." 
+                                      rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors flex items-center h-fit">
+                            <i class="fas fa-paper-plane mr-2"></i>Отправить
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Comments List -->
+                <div class="space-y-4">
+                    <div th:each="comment : ${course.comments}" class="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-user-circle text-2xl text-gray-400"></i>
+                                <span class="font-semibold text-gray-800" th:text="${comment.author}"></span>
+                            </div>
+                            <span class="text-sm text-gray-500" th:text="${comment.createdAt}"></span>
+                        </div>
+                        <p class="text-gray-700" th:text="${comment.content}"></p>
+                    </div>
+                    
+                    <div th:if="${#lists.isEmpty(course.comments)}" class="text-center py-8 text-gray-500">
+                        <i class="fas fa-comment-slash text-4xl mb-4"></i>
+                        <p>Пока нет комментариев. Будьте первым!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Rating System
+        const stars = document.querySelectorAll('#rating-stars i');
+        let currentRating = 0;
+        const averageRating = /*[[${averageRating}]]*/ 0;
+        
+        // Initialize stars based on average rating
+        document.addEventListener('DOMContentLoaded', function() {
+            highlightStars(Math.round(averageRating));
+        });
+        
+        stars.forEach((star, index) => {
+            star.addEventListener('mouseover', () => {
+                highlightStars(index + 1);
+            });
+            
+            star.addEventListener('mouseout', () => {
+                highlightStars(currentRating || Math.round(averageRating));
+            });
+            
+            star.addEventListener('click', () => {
+                currentRating = index + 1;
+                highlightStars(currentRating);
+                // Send rating to server
+                const courseId = window.location.pathname.split('/').pop();
+                const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+                
+                const headers = {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                };
+                
+                if (csrfToken && csrfHeader) {
+                    headers[csrfHeader] = csrfToken;
+                }
+                
+                fetch(`/courses/${courseId}/rate`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: `rating=${currentRating}`
+                })
+                .then(response => response.text())
+                .then(data => {
+                    if (data === 'success') {
+                        console.log('Rating saved successfully');
+                        // Show success message
+                        showNotification('Спасибо за вашу оценку!', 'success');
+                        // Update the rating display
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Ошибка при сохранении оценки', 'error');
+                });
+            });
+        });
+        
+        function highlightStars(rating) {
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('text-gray-300');
+                    star.classList.add('text-yellow-400');
+                } else {
+                    star.classList.remove('text-yellow-400');
+                    star.classList.add('text-gray-300');
+                }
+            });
+        }
+        
+        // Video Progress Tracking
+        const video = document.querySelector('video');
+        if (video) {
+            video.addEventListener('timeupdate', () => {
+                const progress = (video.currentTime / video.duration) * 100;
+                // Update progress bar
+                const progressBar = document.querySelector('.bg-green-500');
+                if (progressBar) {
+                    progressBar.style.width = progress + '%';
+                }
+                // Update progress text
+                const progressText = document.querySelector('.text-gray-500');
+                if (progressText && progressText.textContent.includes('%')) {
+                    progressText.textContent = Math.round(progress) + '%';
+                }
+            });
+        }
+        
+        // Notification function
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg text-white z-50 ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
