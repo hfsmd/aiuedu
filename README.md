@@ -4,7 +4,6 @@
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.0-green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
-![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 
 ## 🎓 О проекте
 
@@ -100,20 +99,6 @@ mvn spring-boot:run
 ```
 http://localhost:8080
 ```
-
-### Продакшен деплой
-
-Для деплоя на **freelance.com.kz** используйте автоматический скрипт:
-
-```bash
-# Сделать скрипт исполняемым
-chmod +x deploy.sh
-
-# Запустить деплой
-./deploy.sh deploy
-```
-
-Подробная инструкция по деплою: [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ## 📁 Структура проекта
 
